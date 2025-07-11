@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  minio:
+    hostname: minio
+    image: "minio/minio"
+    container_name: minio
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    command: [ "server", "/data", "--console-address", ":9001" ]
+    volumes:
+      - ./volumes/minio:/data
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=minio123
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=minio123
+
+  mysql:
+    hostname: mysql
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql123root
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: mysql123
+    volumes:
+      - ./volumes/mysql:/var/lib/mysql
+
+  postgres:
+    hostname: postgres
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: postgres
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data
+
+  jupyter:
+    hostname: jupyter-nb
+    image: jupyter/all-spark-notebook:python-3.8
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+    command: start-notebook.sh
+    volumes:
+      - ./notebooks:/home/jovyan/work
