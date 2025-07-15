@@ -1,4 +1,4 @@
-assignments/**/volumes/
+*.sock
 *.rar
 **/__pycache__/
 *.py[cod]
