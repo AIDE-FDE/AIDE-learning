@@ -1,2 +1,4 @@
 assignments/**/volumes/
 *.rar
+**/__pycache__/
+*.py[cod]
