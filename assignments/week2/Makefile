@@ -22,4 +22,4 @@ to_mysql_root:
 	docker exec -it de_mysql mysql -u root -p$(MYSQL_ROOT_PASSWORD) $(MYSQL_DATABASE)
 
 dagster:
-	dagster dev -f etl_pipeline/assets/one_table.py --working-directory etl_pipeline
+	dagster dev -f etl_pipeline/repository.py --working-directory etl_pipeline
