@@ -26,7 +26,7 @@ class PostgreSQLIOManager(IOManager):
         self._config = config
 
     def load_input (self, context: InputContext) -> pd.DataFrame:
-        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
+        schema, table = context.asset_key.path[0], context.asset_key.path[-1]
         query = f'SELECT * FROM "{schema}"."{table}"'
 
         with connect_psql(self._config) as engine:
@@ -39,7 +39,7 @@ class PostgreSQLIOManager(IOManager):
 
 
     def handle_output (self, context: OutputContext, obj: pd.DataFrame):
-        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
+        schema, table = context.asset_key.path[0], context.asset_key.path[-1]
 
         with connect_psql(self._config) as engine:
             try:

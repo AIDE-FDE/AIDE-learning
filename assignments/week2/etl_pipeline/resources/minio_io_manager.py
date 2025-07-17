@@ -31,15 +31,23 @@ class MinIOIOManager(IOManager):
             self.client = client
             if not self.client.bucket_exists(self.bucket):
                 self.client.make_bucket(self.bucket)
-
+    
     def _get_key_path(self, context: Union[InputContext, OutputContext]):
-        # e.g. warehouse/bronze/ecom/orders_dataset.parquet
-        layer, schema, table = context.asset_key.path
-        key = "/".join ([layer, schema, table.replace (f"{layer}_", "")])
-        tmp_file_path = "/tmp/file-{}-{}.parquet".format (datetime.today ().strftime ('%Y%m%d%H%M%S'),
-                                                          "-".join (context.asset_key.path))
-        
-        return f"{key}.pq", tmp_file_path
+        path = context.asset_key.path
+        layer, schema, table = path[0], path[1], path[-1]
+        key = "/".join([layer, schema, table.replace(f"{layer}_", "")]) + ".pq"
+
+        # Tạo thư mục tmp trong dự án nếu chưa có
+        tmp_dir = os.path.join(os.getcwd(), "tmp")
+        os.makedirs(tmp_dir, exist_ok=True)  # Tạo thư mục nếu chưa tồn tại
+
+        file_name = "file-{}-{}.parquet".format(
+            datetime.today().strftime('%Y%m%d%H%M%S'),
+            "-".join(context.asset_key.path)
+        )
+        tmp_file_path = os.path.join(tmp_dir, file_name)
+
+        return key, tmp_file_path
 
     def handle_output(self, context: OutputContext, obj: pd.DataFrame):
         key_name, tmp_file_path = self._get_key_path (context)

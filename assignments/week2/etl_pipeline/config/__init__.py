@@ -17,7 +17,7 @@ MINIO_CONFIG = {
 PSQL_CONFIG = {
     "host": "localhost",
     "port": 5433,
-    "database": "portgres",
+    "database": "postgres",
     "user": "admin",
     "password": "admin123"
 }
