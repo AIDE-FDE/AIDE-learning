@@ -105,7 +105,7 @@ Tạo table tương tự cho PostgreSQL
 ```sql
 # run commands
 make to_psql
-    CREATE TABLE public.olist_orders_dataset (
+CREATE TABLE public.olist_orders_dataset (
     order_id text NULL,
     customer_id text NULL,
     order_status text NULL,
