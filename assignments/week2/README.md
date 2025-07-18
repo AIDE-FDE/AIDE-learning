@@ -121,7 +121,7 @@ make to_psql
 *Như trong thư mục resources đã làm*
 
 
-### 2.4. Tiến hành định nghĩa các layer data (các assets cho dagster)
+### 2.4. Tiến hành định nghĩa các data layer (các assets cho dagster)
 *Như trong thư mục assets đã làm*
 
 ### 2.5. định nghĩa file `repository.py` (file này sẽ chạy các assets được định nghĩa trong thư mục assets)
