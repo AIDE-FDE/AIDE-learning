@@ -4,7 +4,7 @@ from dagster import asset, AssetIn, AssetKey, AssetExecutionContext, Output
 @asset(
     ins={"gold_sales_by_category": AssetIn(key=AssetKey(["gold", "ecom", "gold_sales_by_category"]))},
     io_manager_key="psql_io_manager",
-    group_name="report_layer",
+    group_name="warehouse",
     key_prefix=["gold", "ecom"],
     compute_kind="PostgreSQL"
 )
