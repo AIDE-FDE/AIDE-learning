@@ -48,7 +48,7 @@ etl_pipeline
 # 2. Quy trình thực hiện
 ### 2.1. Cài đặt các thư viện cần thiết từ file `re.txt`
 ```bash
-pip install -r requirements.txt
+pip install -r re.txt
 ```
 
 ### Khởi chạy các service
