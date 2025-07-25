@@ -1,7 +1,7 @@
 # dagster requirements: 
 dagster==1.7.2 
 dagit==1.7.2 
-dagster-postgres 
+dagster-postgres==0.23.5
 
 # etl_pipeline requirements: 
 dagster==1.7.2 
