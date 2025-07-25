@@ -1,0 +1,67 @@
+version: "3.9"
+services:
+  etl_pipeline:
+    build:
+      context: ./etl_pipeline
+      dockerfile: ./Dockerfile
+    container_name: etl_pipeline
+    image: etl_pipeline:latest
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./etl_pipeline:/opt/dagster/app
+    env_file:
+      - .env
+    networks:
+      - de_network
+
+  de_psql:
+    image: postgres:15
+    container_name: de_psql
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgresql:/var/lib/postgresql/data
+    env_file:
+      - .env
+    networks:
+      - de_network
+
+  de_dagster:
+    build:
+      context: ./dagster/
+    image: de_dagster
+    container_name: de_dagster
+
+  de_dagster_dagit:
+    image: de_dagster:latest
+    container_name: de_dagster_dagit
+    entrypoint: ["dagit", "-h", "0.0.0.0", "-p", "3001", "-w", "workspace.yaml"]
+    expose:
+      - "3001"
+    ports:
+      - "3001:3001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./dagster_home:/opt/dagster/dagster_home
+    env_file:
+      - .env
+    networks:
+      - de_network
+
+  de_dagster_daemon:
+    image: de_dagster:latest
+    container_name: de_dagster_daemon
+    entrypoint: ["dagster-daemon", "run"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./dagster_home:/opt/dagster/dagster_home
+    env_file:
+      - .env
+    networks:
+      - de_network
+
+networks:
+  de_network:
+    driver: bridge
+    name: de_network
