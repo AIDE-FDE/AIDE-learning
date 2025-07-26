@@ -1,4 +1,7 @@
 from contextlib import contextmanager
+from datetime import datetime
+from operator import index
+from os import name
 
 import pandas as pd
 from dagster import IOManager, OutputContext, InputContext
@@ -41,16 +44,63 @@ class PostgreSQLIOManager(IOManager):
     def handle_output (self, context: OutputContext, obj: pd.DataFrame):
         schema, table = context.asset_key.path[0], context.asset_key.path[-1]
 
+        tmp_tbl = f"{table}_tmp_{datetime.now ().strftime ('%Y_%m_%d')}"
+
         with connect_psql(self._config) as engine:
-            try:
-                obj.to_sql(
-                    name=table,
+            primary_keys = (context.metadata or {}).get ("primary_keys", {})
+            ls_columns = (context.metadata or {}).get ("columns", {})
+
+            with engine.connect () as cursor:
+                # tmp file creattion
+                cursor.execute (
+                    f"CREATE TEMP TABLE IF NOT EXISTS {tmp_tbl} (LIKE {schema}.{table})"
+                )
+
+                # insert new data
+                obj[ls_columns].to_sql (
+                    name=tmp_tbl,
                     con=engine,
                     schema=schema,
-                    if_exists="append", 
+                    if_exists="replace",
                     index=False,
+                    chunksize=10000,
+                    method="multi"
                 )
-                context.log.info(f"Wrote DataFrame to PostgreSQL table: {schema}.{table}")
-            except Exception as e:
-                context.log.error(f"Failed to write to PostgreSQL: {e}")
-                raise
+
+            with engine.connect () as cursor:
+                result = cursor.execute (f"SELECT COUNT (*) FROM {tmp_tbl}")
+                for row in result:
+                    print (f"temp table records: {row}")
+
+                    if len (primary_keys) > 0:
+                        conditions = " AND ".join ([
+                            f"""
+                            {schema}.{table}."{k}" = {tmp_tbl}."{k}"
+                            """ for k in primary_keys
+                        ])
+
+
+                        command = f"""
+                            BEGIN TRANSACTION
+                            DELETE FROM {schema}.{table}
+                            USING {tmp_tbl}
+                            WHERE {conditions};
+
+                            INSERT INTO {schema}.{table}
+                            SELECT * FROM {tmp_tbl}
+
+                            END TRANSACTION
+                        """
+                    else:
+                        command = f"""
+                            BEGIN TRANSACTION
+                            TRUNCATE TABLE {schema}.{table};
+
+                            INSERT INTO {schema}.{table}
+                            SELECT * FROM {tmp_tbl}
+
+                            END TRANSACTION
+                        """
+
+                    cursor.execute (command)
+                    cursor.execute (f"DROP TABLE IF EXISTS {tmp_tbl}")
