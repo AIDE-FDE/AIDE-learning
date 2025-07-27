@@ -1,6 +1,5 @@
 import os
 from contextlib import contextmanager
-from shlex import join
 import pandas as pd
 from datetime import datetime
 from typing import Union
@@ -74,29 +73,9 @@ class MinIOIOManager(IOManager):
             context.log.info(f"---- Uploaded asset to MinIO: {key_name}")
             os.remove(tmp_file_path)
         except Exception as e:
-            raise e
-
-    # def load_input(self, context: InputContext) -> pd.DataFrame:
-    #     key_name, tmp_file_path = self._get_key_path (context)
+            raise 
 
 
-    #     # Download file
-    #     try:
-    #         self.client.fget_object(
-    #             bucket_name=self.bucket,
-    #             object_name=key_name,
-    #             file_path=tmp_file_path,
-    #         )
-
-    #         # Read to DataFrame
-    #         df = pd.read_parquet(tmp_file_path)
-    #         os.remove(tmp_file_path)
-
-    #         context.log.info(f"Loaded asset from MinIO: {key_name}")
-    #         return df
-        
-    #     except S3Error as e:
-    #         raise FileNotFoundError(f"Can not find file {key_name} in bucket MinIO.") from e
     def load_input(self, context: InputContext) -> pd.DataFrame:
         path = context.asset_key.path
         layer, schema, table = path[0], path[1], path[-1]
@@ -122,14 +101,19 @@ class MinIOIOManager(IOManager):
                     os.remove(tmp_file_path)
                     context.log.info(f"Loaded partition {partition_key} from MinIO")
                 except S3Error as e:
-                    raise FileNotFoundError(
-                        f"Partition {partition_key} not found in MinIO at {key_name}"
-                    ) from e
+                    raise
+                    
+
+                context.log.info(f"key name: {key_name}")
+                context.log.info (f"tmp_file_path: {tmp_file_path}")
             return pd.concat(dfs, ignore_index=True)
 
         else:
             key_name = f"{base_key}.pq"
             tmp_file_path = os.path.join(tmp_dir, f"{table}.pq")
+
+            context.log.info(f"key name: {key_name}")
+            context.log.info (f"tmp_file_path: {tmp_file_path}")
 
             try:
                 self.client.fget_object(

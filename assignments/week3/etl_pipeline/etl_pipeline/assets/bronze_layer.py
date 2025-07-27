@@ -1,7 +1,7 @@
 # etl_pipeline/assets/bronze_layer.py
 
 import pandas as pd
-from dagster import asset, Output
+from dagster import asset, Output,DailyPartitionsDefinition
 
 TABLES = [
     "olist_order_items_dataset",
@@ -40,7 +40,6 @@ bronze_olist_order_payments_dataset = create_bronze_asset("olist_order_payments_
 bronze_olist_products_dataset = create_bronze_asset("olist_products_dataset")
 bronze_product_category_name_translation = create_bronze_asset("product_category_name_translation")
 
-from dagster import asset, DailyPartitionsDefinition, Output
 
 @asset(
     name="bronze_olist_orders_dataset",
@@ -56,8 +55,9 @@ def bronze_olist_orders_dataset(context) -> Output[pd.DataFrame]:
     partition_date = pd.to_datetime(partition_date_str).strftime("%Y-%m-%d")
 
     sql_stm = f"""
-    SELECT * FROM olist_orders_dataset
-    WHERE DATE(order_purchase_timestamp) = '{partition_date}'
+        SELECT * FROM olist_orders_dataset
+        WHERE DATE(order_purchase_timestamp) = '{partition_date}'
     """
     df = context.resources.mysql_io_manager.extract_data(sql_stm)
+    context.log.info (df.head (10))
     return Output(df, metadata={"table": "olist_orders_dataset"})
