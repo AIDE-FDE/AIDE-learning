@@ -1,5 +1,6 @@
 import pandas as pd
 from dagster import asset, AssetExecutionContext, Output, AssetIn, AssetKey
+from etl_pipeline.config.assets_config import daily_partition_def
 
 
 @asset(
@@ -7,6 +8,7 @@ from dagster import asset, AssetExecutionContext, Output, AssetIn, AssetKey
         "fact_sales": AssetIn(key=AssetKey(["silver", "ecom", "fact_sales"])),
         "dim_products": AssetIn(key=AssetKey(["silver", "ecom", "dim_products"])),
     },
+    partitions_def=daily_partition_def,
     io_manager_key="minio_io_manager",
     group_name="gold_layer",
     key_prefix=["gold", "ecom"],

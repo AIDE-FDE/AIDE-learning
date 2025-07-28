@@ -1,12 +1,9 @@
 from contextlib import contextmanager
 from datetime import datetime
-from operator import index
-from os import name
 
 import pandas as pd
 from dagster import IOManager, OutputContext, InputContext
-from sqlalchemy import create_engine
-from tomlkit import table
+from sqlalchemy import create_engine, text
 
 
 @contextmanager
@@ -48,12 +45,13 @@ class PostgreSQLIOManager(IOManager):
 
         with connect_psql(self._config) as engine:
             primary_keys = (context.metadata or {}).get ("primary_keys", {})
-            ls_columns = (context.metadata or {}).get ("columns", {})
+            ls_columns = (context.metadata or {}).get ("columns", [])
 
             with engine.connect () as cursor:
+                cursor.execute (text (f"CREATE SCHEMA IF NOT EXISTS {schema};"))
                 # tmp file creattion
                 cursor.execute (
-                    f"CREATE TEMP TABLE IF NOT EXISTS {tmp_tbl} (LIKE {schema}.{table})"
+                    text (f"CREATE TEMP TABLE IF NOT EXISTS {tmp_tbl} (LIKE {schema}.{table})")
                 )
 
                 # insert new data
@@ -68,7 +66,7 @@ class PostgreSQLIOManager(IOManager):
                 )
 
             with engine.connect () as cursor:
-                result = cursor.execute (f"SELECT COUNT (*) FROM {tmp_tbl}")
+                result = cursor.execute (text (f"SELECT COUNT (*) FROM {tmp_tbl}"))
                 for row in result:
                     print (f"temp table records: {row}")
 
@@ -81,7 +79,7 @@ class PostgreSQLIOManager(IOManager):
 
 
                         command = f"""
-                            BEGIN TRANSACTION
+                            BEGIN
                             DELETE FROM {schema}.{table}
                             USING {tmp_tbl}
                             WHERE {conditions};
@@ -89,18 +87,19 @@ class PostgreSQLIOManager(IOManager):
                             INSERT INTO {schema}.{table}
                             SELECT * FROM {tmp_tbl}
 
-                            END TRANSACTION
+                            COMMIT;
                         """
                     else:
                         command = f"""
-                            BEGIN TRANSACTION
+                            BEGIN
                             TRUNCATE TABLE {schema}.{table};
 
                             INSERT INTO {schema}.{table}
                             SELECT * FROM {tmp_tbl}
 
-                            END TRANSACTION
+                            COMMIT;
                         """
 
-                    cursor.execute (command)
+                    cursor.execute (text(command))
                     cursor.execute (f"DROP TABLE IF EXISTS {tmp_tbl}")
+

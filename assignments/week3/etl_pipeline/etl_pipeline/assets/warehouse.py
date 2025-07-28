@@ -1,8 +1,10 @@
 import pandas as pd
 from dagster import asset, AssetIn, AssetKey, AssetExecutionContext, Output
+from etl_pipeline.config.assets_config import daily_partition_def
 
 @asset(
     ins={"gold_sales_by_category": AssetIn(key=AssetKey(["gold", "ecom", "gold_sales_by_category"]))},
+    partitions_def=daily_partition_def,
     io_manager_key="psql_io_manager",
     group_name="warehouse",
     key_prefix=["gold", "ecom"],

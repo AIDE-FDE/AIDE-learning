@@ -1,7 +1,8 @@
 # etl_pipeline/assets/bronze_layer.py
 
 import pandas as pd
-from dagster import asset, Output,DailyPartitionsDefinition
+from dagster import asset, Output
+from etl_pipeline.config.assets_config import daily_partition_def
 
 TABLES = [
     "olist_order_items_dataset",
@@ -47,7 +48,7 @@ bronze_product_category_name_translation = create_bronze_asset("product_category
     required_resource_keys={"mysql_io_manager"},
     key_prefix=["bronze", "ecom"],
     compute_kind="MySQL",
-    partitions_def=DailyPartitionsDefinition(start_date="2017-01-01"),
+    partitions_def=daily_partition_def,
     group_name="bronze_layer",
 )
 def bronze_olist_orders_dataset(context) -> Output[pd.DataFrame]:
