@@ -1,31 +1,82 @@
 import pandas as pd
-from dagster import asset, AssetIn, AssetKey, AssetExecutionContext, Output
-from etl_pipeline.config.assets_config import daily_partition_def
-
-@asset(
-    ins={"gold_sales_by_category": AssetIn(key=AssetKey(["gold", "ecom", "gold_sales_by_category"]))},
-    partitions_def=daily_partition_def,
-    io_manager_key="psql_io_manager",
-    group_name="warehouse",
-    key_prefix=["gold", "ecom"],
-    compute_kind="PostgreSQL"
+from dagster import (
+    asset,
+    multi_asset,
+    AssetIn,
+    AssetOut,
+    Output,
+    DailyPartitionsDefinition,
+    OutputContext,
 )
-def sales_values_by_category(
-    context: AssetExecutionContext,
-    gold_sales_by_category: pd.DataFrame,
-) -> Output[pd.DataFrame]:
-    df = gold_sales_by_category.rename(columns={
-        "total_sales": "sales",
-        "total_bills": "bills",
-        "values_per_bills": "values_per_bill",
-    })
 
-    context.log.info(f"Saving {len(df)} rows to PostgreSQL table gold.sales_values_by_category")
-
+@multi_asset(
+    ins={
+        "upstream": AssetIn(
+            key=["bronze", "ecom", "bronze_olist_orders_dataset"],
+        )
+    },
+    outs={
+        "olist_orders_dataset": AssetOut(
+            io_manager_key="psql_io_manager",
+            key_prefix=["warehouse", "public"],
+            metadata={
+                "primary_keys": ["order_id", "customer_id"],
+                "columns": [
+                    "order_id",
+                    "customer_id",
+                    "order_status",
+                    "order_purchase_timestamp",
+                    "order_approved_at",
+                    "order_delivered_carrier_date",
+                    "order_delivered_customer_date",
+                    "order_estimated_delivery_date",
+                ],
+            },
+        )
+    },
+    compute_kind="PostgreSQL",
+    name="olist_orders_dataset",
+    partitions_def=DailyPartitionsDefinition(start_date="2017-01-01"),
+    group_name="warehouse"
+)
+def dwh_olist_orders_dataset(context, upstream: pd.DataFrame) -> Output[pd.DataFrame]:
+    context.log.info("Transforming bronze → warehouse layer")
     return Output(
-        df,
+        upstream,
         metadata={
-            "rows": len(df),
-            "columns": list(df.columns),
+            "schema": "public",
+            "record_count": len(upstream),
         },
     )
+
+
+
+
+def create_warehouse_asset(name: str):
+    bronze_asset_name = f"bronze_{name}"
+
+    @asset(
+        name=f"gold_{name}",
+        key_prefix=["warehouse", "public"],
+        io_manager_key="psql_io_manager",
+        compute_kind="PostgreSQL",
+        group_name="warehouse",
+        ins={
+            bronze_asset_name: AssetIn(
+                key=["bronze", "ecom", bronze_asset_name],
+            )
+        },
+    )
+    def gold_asset(context, **kwargs) -> Output[pd.DataFrame]:
+        df = kwargs[bronze_asset_name]
+        context.log.info(f"[LOAD] {bronze_asset_name} → warehouse_{name}, shape={df.shape}")
+        context.log.info (df.head (10))
+        return Output(df, metadata={"records": len(df)})
+
+    return gold_asset
+
+
+# Non-partitioned gold assets
+gold_olist_order_items_dataset = create_warehouse_asset("olist_order_items_dataset")
+gold_olist_order_payments_dataset = create_warehouse_asset("olist_order_payments_dataset")
+gold_olist_products_dataset = create_warehouse_asset("olist_products_dataset")

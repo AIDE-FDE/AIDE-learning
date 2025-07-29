@@ -1,8 +1,7 @@
 # etl_pipeline/assets/bronze_layer.py
 
 import pandas as pd
-from dagster import asset, Output
-from etl_pipeline.config.assets_config import daily_partition_def
+from dagster import asset, Output, DailyPartitionsDefinition
 
 TABLES = [
     "olist_order_items_dataset",
@@ -19,7 +18,7 @@ def create_bronze_asset(table_name):
         io_manager_key="minio_io_manager",
         required_resource_keys={"mysql_io_manager"},
         compute_kind="MySQL",
-        group_name="bronze_layer"
+        group_name="bronze"
     )
     def bronze_asset(context) -> Output[pd.DataFrame]:
         sql = f"SELECT * FROM {table_name}"
@@ -39,7 +38,6 @@ def create_bronze_asset(table_name):
 bronze_olist_order_items_dataset = create_bronze_asset("olist_order_items_dataset")
 bronze_olist_order_payments_dataset = create_bronze_asset("olist_order_payments_dataset")
 bronze_olist_products_dataset = create_bronze_asset("olist_products_dataset")
-bronze_product_category_name_translation = create_bronze_asset("product_category_name_translation")
 
 
 @asset(
@@ -48,17 +46,23 @@ bronze_product_category_name_translation = create_bronze_asset("product_category
     required_resource_keys={"mysql_io_manager"},
     key_prefix=["bronze", "ecom"],
     compute_kind="MySQL",
-    partitions_def=daily_partition_def,
-    group_name="bronze_layer",
+    partitions_def=DailyPartitionsDefinition(start_date="2017-01-01"),
+    group_name="bronze"
 )
 def bronze_olist_orders_dataset(context) -> Output[pd.DataFrame]:
-    partition_date_str = context.asset_partition_key_for_output()
-    partition_date = pd.to_datetime(partition_date_str).strftime("%Y-%m-%d")
+    table="olist_orders_dataset"
+    try:
+        partition_date_str = context.asset_partition_key_for_output()
 
-    sql_stm = f"""
-        SELECT * FROM olist_orders_dataset
-        WHERE DATE(order_purchase_timestamp) = '{partition_date}'
-    """
-    df = context.resources.mysql_io_manager.extract_data(sql_stm)
-    context.log.info (df.head (10))
-    return Output(df, metadata={"table": "olist_orders_dataset"})
+        sql_stm = f"""
+            SELECT *
+            FROM {table}
+            WHERE DATE(order_purchase_timestamp) = '{partition_date_str}'
+        """
+        context.log.info(f"Running partitioned query for date: {partition_date_str}")
+    except Exception:
+        context.log.info(f"{table} has no partition key! Loading full table.")
+        sql_stm = f"SELECT * FROM {table}"
+
+    pd_data = context.resources.mysql_io_manager.extract_data(sql_stm)
+    return Output(pd_data, metadata={"table": table, "record_count": len(pd_data)})

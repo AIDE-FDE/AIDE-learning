@@ -19,7 +19,7 @@ services:
     image: postgres:15
     container_name: de_psql
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - ./postgresql:/var/lib/postgresql/data
     env_file:
