@@ -261,3 +261,168 @@ final as (
 
 select * from final
 ```
+
+#### Practise
+1. Create these following models in the `models` folder:
+    - `models/staging/jaffle_shop:`
+        - `stg_jaffle_shop_customer.sql`:
+            ```sql
+            select
+                id as customer_id,
+                first_name,
+                last_name
+            from raw.jaffle_shop.customers
+            ```
+        - `stg_jaffle_shop_order.sql`:
+            ```sql
+            select
+                id as order_id,
+                user_id as customer_id,
+                order_date,
+                status
+            from raw.jaffle_shop.orders
+            ```
+    - `models/staging/stripe` :
+        - `stg_stripe__payments.sql`:
+            ```sql
+            select
+                id as payment_id,
+                orderid as order_id,
+                paymentmethod as payment_method,
+                status,
+                amount / 100 as amount,
+                created as created_at
+            from raw.stripe.payment
+            ```
+    - `models/marts/finance` :
+        - `fct_orders.sql`:
+            ```sql
+            with orders as  (
+                select * from {{ ref ('stg_jaffle_shop_order' )}}
+            ),
+
+            payments as (
+                select * from {{ ref ('stg_stripe__payments') }}
+            ),
+
+            order_payments as (
+                select
+                    order_id,
+                    sum (case when status = 'success' then amount end) as amount
+
+                from payments
+                group by 1
+            ),
+
+            final as (
+
+                select
+                    orders.order_id,
+                    orders.customer_id,
+                    orders.order_date,
+                    coalesce (order_payments.amount, 0) as amount
+
+                from orders
+                left join order_payments using (order_id)
+            )
+
+            select * from final
+            ```
+        - `dim_customers.sql`:
+            ```sql
+            with customers as (
+                select * from {{ ref ('stg_jaffle_shop_customer')}}
+            ),
+            orders as (
+                select * from {{ ref ('fct_orders')}}
+            ),
+            customer_orders as (
+                select
+                    customer_id,
+                    min (order_date) as first_order_date,
+                    max (order_date) as most_recent_order_date,
+                    count(order_id) as number_of_orders,
+                    sum(amount) as lifetime_value
+                from orders
+                group by 1
+            ),
+            final as (
+                select
+                    customers.customer_id,
+                    customers.first_name,
+                    customers.last_name,
+                    customer_orders.first_order_date,
+                    customer_orders.most_recent_order_date,
+                    coalesce (customer_orders.number_of_orders, 0) as number_of_orders,
+                    customer_orders.lifetime_value
+                from customers
+                left join customer_orders using (customer_id)
+            )
+            select * from final
+            ```
+
+2. Run dbt run
+    ```bash
+    dbt run
+    ```
+
+3. View the result in the snowflake
+    ![alt text](../images/image_23.png)
+
+
+#### Review 
+1. Models
+    - Models are .sql files that live in the models folder.
+    - Models are simply written as select statements - there is no DDL/DML that needs to be written around this. This allows the developer to focus on the logic.
+    - In the Cloud IDE, the Preview button will run this select statement against your data warehouse. The results shown here are equivalent to what this model will return once it is materialized.
+    - After constructing a model, dbt run in the command line will actually materialize the models into the data warehouse. The default materialization is a view.
+    - The materialization can be configured as a table with the following configuration block at the top of the model file:
+        ```sql
+        {{ config(
+            materialized='table'
+        ) }}
+        ```
+        or as a view
+        ```sql
+        {{ config(
+            materialized='view'
+        ) }}
+        ```
+    - When dbt run is executing, dbt is wrapping the select statement in the correct DDL/DML to build that model as a table/view. If that model already exists in the data warehouse, dbt will automatically drop that table or view before building the new database object. *Note: If you are on BigQuery, you may need to run dbt run --full-refresh for this to take effect.
+
+    - The DDL/DML that is being run to build each model can be viewed in the logs through the cloud interface or the target folder.
+        ![alt text](../images/image_24.png)
+    
+2. ref Macro
+    - Models can be written to reference the underlying tables and views that were building the data warehouse (e.g. analytics.dbt_jsmith.stg_jaffle_shop_customers). This hard codes the table names and makes it difficult to share code between developers.
+    - The ref function allows us to build dependencies between models in a flexible way that can be shared in a common code base. The ref function compiles to the name of the database object as it has been created on the most recent execution of dbt run in the particular development environment. This is determined by the environment configuration that was set up when the project was created.
+    - Example: {{ ref('stg_jaffle_shop_customers') }} compiles to analytics.dbt_jsmith.stg_jaffle_shop_customers.
+    - The ref function also builds a lineage graph like the one shown below. dbt is able to determine dependencies between models and takes those into account to build models in the correct order.
+        ![alt text](../images/image_25.png)
+
+3. Modeling History
+    - There have been multiple modeling paradigms since the advent of database technology. Many of these are classified as normalized modeling.
+    - Normalized modeling techniques were designed when storage was expensive and computational power was not as affordable as it is today.
+    - With a modern cloud-based data warehouse, we can approach analytics differently in an agile or ad hoc modeling technique. This is often referred to as denormalized modeling.
+    - dbt can build your data warehouse into any of these schemas. dbt is a tool for how to build these rather than enforcing what to build.
+4. Naming Conventions 
+    - In working on this project, we established some conventions for naming our models.
+
+    - Sources (src) refer to the raw table data that have been built in the warehouse through a loading process. (We will cover configuring Sources in the Sources module)
+    - Staging (stg) refers to models that are built directly on top of sources. These have a one-to-one relationship with sources tables. These are used for very light transformations that shape the data into what you want it to be. These models are used to clean and standardize the data before transforming data downstream. Note: These are typically materialized as views.
+    - Intermediate (int) refers to any models that exist between final fact and dimension tables. These should be built on staging models rather than directly on sources to leverage the data cleaning that was done in staging.
+    - Fact (fct) refers to any data that represents something that occurred or is occurring. Examples include sessions, transactions, orders, stories, votes. These are typically skinny, long tables.
+    - Dimension (dim) refers to data that represents a person, place or thing. Examples include customers, products, candidates, buildings, employees.
+    
+    > *Note: The Fact and Dimension convention is based on previous normalized modeling techniques.*
+
+
+#### Recap
+![alt text](../images/image_15.png)
+![alt text](../images/image_16.png)
+![alt text](../images/image_17.png)
+![alt text](../images/image_18.png)
+![alt text](../images/image_19.png)
+![alt text](../images/image_20.png)
+![alt text](../images/image_21.png)
+![alt text](../images/image_22.png)

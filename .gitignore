@@ -2,3 +2,4 @@
 *.rar
 **/__pycache__/
 *.py[cod]
+***/dbt_course/
