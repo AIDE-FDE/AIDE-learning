@@ -17,7 +17,7 @@
     - dbt empowers data teams to leverage software engineering principles for transforming data.
     - The focus of this course is to build your analytics engineering mindset and dbt skills to give you more leverage in your work.
 
-#### Recap
+#### Knowledge check
 ![alt text](../images/image_00.png)
 ![alt text](../images/image_01.png)
 ![alt text](../images/image_02.png)
@@ -417,7 +417,7 @@ select * from final
     > *Note: The Fact and Dimension convention is based on previous normalized modeling techniques.*
 
 
-#### Recap
+#### Knowledge check
 ![alt text](../images/image_15.png)
 ![alt text](../images/image_16.png)
 ![alt text](../images/image_17.png)
@@ -426,3 +426,147 @@ select * from final
 ![alt text](../images/image_20.png)
 ![alt text](../images/image_21.png)
 ![alt text](../images/image_22.png)
+
+
+### Module 5 (Sources)
+#### Practise
+1. create and edit these file
+    - `models/staging/jaffle_shop/_jaffle_shop__sources.yml`
+        ```yml
+        version: 2
+
+        sources:
+        - name: jaffle_shop
+            database: raw
+            schema: jaffle_shop
+            freshness: 
+            error_after:
+                count: 10
+                period: day
+            warn_after:
+                count: 3
+                period: day
+            loaded_at_field: "convert_timezone('UTC', _etl_loaded_at)"
+            tables:
+            - name: customers
+                freshness: null
+            - name: orders
+        ```
+    - `models/staging/stripe/_stripe__sources.yml`:
+        ```yml
+        version: 2
+
+        sources:
+        - name: stripe
+            database: raw
+            schema: stripe
+            tables:
+            - name: payment
+                freshness:
+                warn_after:
+                    count: 2
+                    period: day
+                error_after:
+                    count: 3
+                    period: day
+                loaded_at_field: _batched_at
+        ```
+2. Refactor these file to get the correct sources:
+     - `models/staging/jaffle_shop/stg_jaffle_shop_customer.sql`:
+        ```sql
+        select
+            id as customer_id,
+            first_name,
+            last_name
+
+        from {{ source('jaffle_shop', 'customers') }}
+        ```
+    - `models/staging/jaffle_shop/stg_jaffle_shop_order.sql`:
+        ```sql
+        select
+            id as order_id,
+            user_id as customer_id,
+            order_date,
+            status
+
+        from {{ source('jaffle_shop', 'orders') }}
+        ```
+    - `models/staging/stripe/stg_stripe__payments.sql`:
+        ```sql
+        select
+            id as payment_id,
+            orderid as order_id,
+            paymentmethod as payment_method,
+            status,
+            amount / 100 as amount,
+            created as created_at
+
+        from {{ source('stripe', 'payment') }}
+        ```
+
+
+3. Then run
+```bash
+dbt source freshness # to check the source freshness
+dbt run --full-refresh # run these model
+```
+#### Review
+1. Sources
+    - Sources represent the raw data that is loaded into the data warehouse.
+    We can reference tables in our models with an explicit table name (raw.jaffle_shop.customers).
+    - However, setting up Sources in dbt and referring to them with the sourcefunction enables a few important tools.
+        - Multiple tables from a single source can be configured in one place.
+        - Sources are easily identified as green nodes in the Lineage Graph.
+        - You can use dbt source freshness to check the freshness of raw tables.
+
+
+2. Configuring sources
+    - Sources are configured in YML files in the models directory.
+    - The following code block configures the table raw.jaffle_shop.customers and raw.jaffle_shop.orders:
+        ```yml
+        version: 2
+
+        sources:
+        - name: jaffle_shop
+            database: raw
+            schema: jaffle_shop
+            tables:
+            - name: customers
+            - name: orders
+        ```
+
+3. Source function 
+    - The ref function is used to build dependencies between models.
+    - Similarly, the source function is used to build the dependency of one model to a source.
+    - Given the source configuration above, the snippet {{ source('jaffle_shop','customers') }} in a model file will compile to raw.jaffle_shop.customers.
+        ![alt text](../images/image_32.png)
+
+
+4. Source freshness
+
+    *It is used to check whether the data is outdated. For example, if the newest record is from July 30, 2025, but today is August 1, 2025, and the freshness limit is 1 day, then the data is considered outdated. Depending on the configuration, this will raise a warning or an error.*
+
+    - Freshness thresholds can be set in the YML file where sources are configured. For each table, the keys loaded_at_field and freshness must be configured.
+        ```yml
+        ersion: 2
+
+        sources:
+        - name: jaffle_shop
+            database: raw
+            schema: jaffle_shop
+            tables:
+            - name: orders
+                loaded_at_field: _etl_loaded_at
+                freshness:
+                warn_after: {count: 12, period: hour}
+                error_after: {count: 24, period: hour}
+        ```
+    - A threshold can be configured for giving a warning and an error with the keys warn_after and error_after.
+    - The freshness of sources can then be determined with the command dbt source freshness.
+### Knowledge check
+![alt text](../images/image_26.png)
+![alt text](../images/image_27.png)
+![alt text](../images/image_28.png)
+![alt text](../images/image_29.png)
+![alt text](../images/image_30.png)
+![alt text](../images/image_31.png)
