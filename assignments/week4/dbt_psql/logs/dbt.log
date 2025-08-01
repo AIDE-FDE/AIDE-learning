@@ -1,0 +1,102 @@
+[0m05:27:53.104068 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001713800FA10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000171360DC7D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000171393D4690>]}
+
+
+============================== 05:27:53.109944 | 510804f4-6459-4714-9d69-7bf756464649 ==============================
+[0m05:27:53.109944 [info ] [MainThread]: Running with dbt=1.10.6
+[0m05:27:53.110812 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'write_json': 'True', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': './', 'version_check': 'True', 'warn_error': 'None', 'log_path': 'logs', 'debug': 'False', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'introspect': 'True', 'invocation_command': 'dbt init --profiles-dir ./', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'static_parser': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m05:28:02.826222 [debug] [MainThread]: Starter project path: D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\include\starter_project
+[0m05:28:02.852953 [info ] [MainThread]: 
+Your new dbt project "brazillian_ecom" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m05:28:02.853659 [info ] [MainThread]: Setting up your profile.
+[0m05:32:54.078289 [error] [MainThread]: Encountered an error:
+
+[0m05:32:54.100696 [error] [MainThread]: Traceback (most recent call last):
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\cli\requires.py", line 178, in wrapper
+    result, success = func(*args, **kwargs)
+                      ~~~~^^^^^^^^^^^^^^^^^
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\cli\requires.py", line 128, in wrapper
+    return func(*args, **kwargs)
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\cli\main.py", line 483, in init
+    results = task.run()
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\task\init.py", line 346, in run
+    self.setup_profile(profile_name)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\task\init.py", line 262, in setup_profile
+    self.create_profile_from_target(adapter, profile_name=profile_name)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\task\init.py", line 179, in create_profile_from_target
+    self.create_profile_from_profile_template(profile_template, profile_name)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\task\init.py", line 163, in create_profile_from_profile_template
+    target = self.generate_target_from_input(prompts, initial_target)
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\task\init.py", line 129, in generate_target_from_input
+    target[key] = click.prompt(
+                  ~~~~~~~~~~~~^
+        text, default=default, hide_input=hide_input, type=type
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\click\termui.py", line 164, in prompt
+    value = prompt_func(prompt)
+  File "D:\WorkSpace\AIDE\venv\Lib\site-packages\click\termui.py", line 147, in prompt_func
+    raise Abort() from None
+click.exceptions.Abort
+
+[0m05:32:54.102670 [debug] [MainThread]: Command `dbt init` failed at 05:32:54.102492 after 301.12 seconds
+[0m05:32:54.103066 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001713954D6E0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000171382C6690>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001713946F790>]}
+[0m05:32:54.103631 [debug] [MainThread]: Flushing usage events
+[0m05:32:55.548631 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m05:33:01.006019 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001BA8DC9FA10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001BA8BD6C7D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001BA8F070690>]}
+
+
+============================== 05:33:01.010977 | 100a5a2c-3031-4056-b3c1-9bf58f434e7c ==============================
+[0m05:33:01.010977 [info ] [MainThread]: Running with dbt=1.10.6
+[0m05:33:01.011706 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'fail_fast': 'False', 'profiles_dir': './', 'log_path': 'logs', 'debug': 'False', 'version_check': 'True', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'static_parser': 'True', 'invocation_command': 'dbt init --profiles-dir ./', 'introspect': 'True', 'target_path': 'None', 'log_format': 'default', 'send_anonymous_usage_stats': 'True'}
+[0m05:33:14.333013 [info ] [MainThread]: A project called brazillian_ecom already exists here.
+[0m05:33:14.334523 [debug] [MainThread]: Command `dbt init` succeeded at 05:33:14.334341 after 13.45 seconds
+[0m05:33:14.334900 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001BA8F0A7100>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001BA8F12F650>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001BA8EEE38A0>]}
+[0m05:33:14.335236 [debug] [MainThread]: Flushing usage events
+[0m05:33:15.604804 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m05:33:32.490449 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000273C06DFA10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000273BE7AC7D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000273C1AA4690>]}
+
+
+============================== 05:33:32.495036 | 8942aa19-c166-4c67-bd04-b0a060668ee6 ==============================
+[0m05:33:32.495036 [info ] [MainThread]: Running with dbt=1.10.6
+[0m05:33:32.495929 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': './', 'fail_fast': 'False', 'version_check': 'True', 'log_path': 'logs', 'warn_error': 'None', 'debug': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'None', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'invocation_command': 'dbt init --profiles-dir ./', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'static_parser': 'True', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m05:33:51.916787 [debug] [MainThread]: Starter project path: D:\WorkSpace\AIDE\venv\Lib\site-packages\dbt\include\starter_project
+[0m05:33:51.933351 [info ] [MainThread]: 
+Your new dbt project "brazillian_ecom" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m05:33:51.934302 [info ] [MainThread]: Setting up your profile.
+[0m05:34:57.122355 [info ] [MainThread]: Profile brazillian_ecom written to profiles.yml using target's profile_template.yml and your supplied values. Run 'dbt debug' to validate the connection.
+[0m05:34:57.124867 [debug] [MainThread]: Command `dbt init` succeeded at 05:34:57.124503 after 84.77 seconds
+[0m05:34:57.125457 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000273C1C1D810>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000273C1B5F770>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000273C19138A0>]}
+[0m05:34:57.126049 [debug] [MainThread]: Flushing usage events
+[0m05:34:58.514224 [debug] [MainThread]: An error was encountered while trying to flush usage events

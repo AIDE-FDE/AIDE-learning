@@ -1,0 +1,12 @@
+brazillian_ecom:
+  outputs:
+    dev:
+      dbname: brazillian_ecommerce
+      host: localhost
+      pass: admin123
+      port: 5433
+      schema: analytics
+      threads: 4
+      type: postgres
+      user: admin
+  target: dev
