@@ -720,3 +720,164 @@ dbt run --full-refresh # run these model
 ![alt text](../images/image_38.png)
 ![alt text](../images/image_39.png)
 ![alt text](../images/image_40.png)
+
+### Module 7 (Documentation)
+#### Practise
+1. Complete document for source and the model
+    - `models/staging/jaffle_shop/stg_jaffle_shop.yml`: (for model)
+        ```yml
+        version: 2
+
+        models:
+        - name: stg_jaffle_shop_customer
+            description: Staged customer data from our jaffle shop app.
+            columns:
+            - name: customer_id
+                description: The primary key for customers.
+                tests:
+                - unique
+                - not_null
+        - name: stg_jaffle_shop_order
+            description: Staged order data from our jaffle shop app.
+            columns:
+            - name: order_id
+                description: Primary key for orders.
+                tests:
+                - unique
+                - not_null
+            - name: status
+                description: '{{ doc("order_status") }}'
+                tests:
+                - accepted_values:
+                        values: ['shipped', 'completed', 'return_pending', 'returned', 'placed']
+            - name: customer_id
+                description: Foreign key to stg_customers.customer_id.
+                tests:
+                - relationships:
+                    to: ref('stg_jaffle_shop_customer')
+                    field: customer_id
+        ```
+    - `models/staging/jaffle_shop/_jaffle_shop_docs.md`: (for docs_block)
+        ```md
+        {% docs order_status %}
+    
+        One of the following values: 
+
+        | status         | definition                                       |
+        |----------------|--------------------------------------------------|
+        | placed         | Order placed, not yet shipped                    |
+        | shipped        | Order has been shipped, not yet been delivered   |
+        | completed      | Order has been received by customers             |
+        | return pending | Customer indicated they want to return this item |
+        | returned       | Item has been returned                           |
+
+        {% enddocs %}
+        ```
+    - `models/staging/jaffle_shop/_jaffle_shop__sources.yml`: (for source)
+        ```yml
+        version: 2
+
+        sources:
+        - name: jaffle_shop
+            description: A clone of a Postgres application database.
+            database: raw
+            schema: jaffle_shop
+            freshness: 
+            error_after:
+                count: 10
+                period: day
+            warn_after:
+                count: 3
+                period: day
+            loaded_at_field: "convert_timezone('UTC', _etl_loaded_at)"
+            tables:
+            - name: customers
+                description: Raw customers data.
+                freshness: null
+                columns:
+                - name: id
+                    description: Primary key for customers.
+                    tests:
+                    - not_null
+                    - unique
+            - name: orders
+                description: Raw orders data.
+                columns:
+                - name: id
+                    description: Primary key for orders.
+                    tests:
+                    - unique
+                    - not_null
+        ```
+2. Run these command
+    - generate docs
+        ```bash
+        dbt docs generate
+        ```
+    - view the document:
+        - on the cloud, click on the view docs button (next to the change branch button):
+            ![alt text](../images/image_43.png)
+        - on the local, run:
+            ```bash
+            dbt docs serve
+            ```
+
+#### Review
+1. Documentation
+    - Documentation is essential for an analytics team to work effectively and efficiently. Strong documentation empowers users to self-service questions about data and enables new team members to on-board quickly.
+    - Documentation often lags behind the code it is meant to describe. This can happen because documentation is a separate process from the coding itself that lives in another tool.
+    - Therefore, documentation should be as automated as possible and happen as close as possible to the coding.
+    - In dbt, models are built in SQL files. These models are documented in YML files that live in the same folder as the models.
+2. Writing documentation and doc blocks
+    - Documentation of models occurs in the YML files (where generic tests also live) inside the models directory. It is helpful to store the YML file in the same subfolder as the models you are documenting.
+    - For models, descriptions can happen at the model, source, or column level.
+    - If a longer form, more styled version of text would provide a strong description, doc blocks can be used to render markdown in the generated documentation.
+3. Generating and viewing documentation
+    - In the command line section, an updated version of documentation can be generated through the command dbt docs generate. This will refresh the `view docs` link in the top left corner of the Cloud IDE.
+    - The generated documentation includes the following:
+        - Lineage Graph
+        - Model, source, and column descriptions
+        - Generic tests added to a column
+        - The underlying SQL code for each model
+        - and more...
+
+
+#### Knowledge check
+![alt text](../images/image_44.png)
+![alt text](../images/image_45.png)
+![alt text](../images/image_46.png)
+![alt text](../images/image_47.png)
+
+### Module 8 (Deployment)
+#### Review
+1. Development vs. Deployment
+    - Development in dbt is the process of building, refactoring, and organizing different files in your dbt project. This is done in a development environment using a development schema (dbt_jsmith) and typically on a non-default branch (i.e. feature/customers-model, fix/date-spine-issue). After making the appropriate changes, the development branch is merged to main/master so that those changes can be used in deployment.
+    - Deployment in dbt (or running dbt in production) is the process of running dbt on a schedule in a deployment environment. The deployment environment will typically run from the default branch (i.e., main, master) and use a dedicated deployment schema (e.g., dbt_prod). The models built in deployment are then used to power dashboards, reporting, and other key business decision-making processes.
+    - The use of development environments and branches makes it possible to continue to build your dbt project without affecting the models, tests, and documentation that are running in production.
+2. Creating your Deployment Environment
+    - A deployment environment can be configured in dbt Cloud on the Environments page.
+    - General Settings: You can configure which dbt version you want to use and you have the option to specify a branch other than the default branch.
+    - Data Warehouse Connection: You can set data warehouse specific configurations here. For example, you may choose to use a dedicated warehouse for your production runs in Snowflake.
+    - Deployment Credentials:Here is where you enter the credentials dbt will use to access your data warehouse:
+        - IMPORTANT: When deploying a real dbt Project, you should set up a separate data warehouse account for this run. This should not be the same account that you personally use in development.
+        - IMPORTANT: The schema used in production should be different from anyone's development schema.
+3. Scheduling a job in dbt Cloud
+    - Scheduling of future jobs can be configured in dbt Cloud on the Jobs page.
+    - You can select the deployment environment that you created before or a different environment if needed.
+    - Commands: A single job can run multiple dbt commands. For example, you can run dbt run and dbt test back to back on a schedule. You don't need to configure these as separate jobs.
+    - Triggers: This section is where the schedule can be set for the particular job.
+    - After a job has been created, you can manually start the job by selecting Run Now
+3. Reviewing Cloud Jobs
+    - The results of a particular job run can be reviewed as the job completes and over time.
+    - The logs for each command can be reviewed.
+    - If documentation was generated, this can be viewed.
+    - If dbt source freshness was run, the results can also be viewed at the end of a job.
+
+![alt text](../images/image_48.png)
+#### Knowledge check
+![alt text](../images/image_49.png)
+![alt text](../images/image_50.png)
+![alt text](../images/image_51.png)
+![alt text](../images/image_52.png)
+![alt text](../images/image_53.png)
+
