@@ -570,3 +570,153 @@ dbt run --full-refresh # run these model
 ![alt text](../images/image_29.png)
 ![alt text](../images/image_30.png)
 ![alt text](../images/image_31.png)
+
+
+
+### Module 6 (Testing)
+#### Practice
+1. Create a generic test for the models
+    - `models/staging/jaffle_shop/stg_jaffle_shop.yml`:
+        ```yml
+        version: 2
+
+        models:
+        - name: stg_jaffle_shop_customer
+            columns:
+            - name: customer_id
+                tests:
+                - unique
+                - not_null
+        - name: stg_jaffle_shop_order
+            columns:
+            - name: order_id
+                tests:
+                - unique
+                - not_null
+            - name: status
+                tests:
+                - accepted_values:
+                        values: ['shipped', 'completed', 'return_pending', 'returned', 'placed']
+            - name: customer_id
+                tests:
+                - relationships:
+                    to: ref('stg_jaffle_shop_customer')
+                    field: customer_id
+        ```
+2. Modify the source file of the jaffle_shop -> adding the source test:
+    - `models/staging/jaffle_shop/_jaffle_shop__sources.yml`:
+        ```yml
+        version: 2
+
+        sources:
+        - name: jaffle_shop
+            database: raw
+            schema: jaffle_shop
+            freshness: 
+            error_after:
+                count: 10
+                period: day
+            warn_after:
+                count: 3
+                period: day
+            loaded_at_field: "convert_timezone('UTC', _etl_loaded_at)"
+            tables:
+            - name: customers
+                freshness: null
+                columns:
+                - name: id
+                    tests:
+                    - not_null
+                    - unique
+            - name: orders
+                columns:
+                - name: id
+                    tests:
+                    - unique
+                    - not_null
+        ```
+
+3. Create the singular test for stripe_payments (custom test in the folder test) -> Tests can be run against the right result
+    - `tests/assert_stg_payment_amount_is_positive.sql`: check whether there are a bill that < 0, if this sql statement return any record, the test failed
+        ```sql
+        with payments as (
+            select *
+            from {{ ref('stg_stripe__payments') }}
+        )
+
+        select
+            order_id,
+            sum (amount) as total_amount
+        from payments
+        group by order_id
+        having total_amount < 0
+        ```
+
+4. Testing
+    - to test the specific model
+        ```bash
+        # dbt test --select <number of upstream node (optional)>+<model name>+<number of downstream node>
+        dbt test --select stg_jaffle_shop_customer
+        dbt test --select stg_jaffle_shop_order
+        ```
+    - to test the specific source
+        ```bash
+        # dbt test --select source:<source name>
+        dbt test --select source:jaffle_shop
+        ```
+
+5. Build command: will testing source first -> materialzing models -> testing each model
+    - build the whole pipeline
+        ```bash
+        dbt build
+        ```
+    - build the specific model
+        ```bash
+        # dbt build --select <number of upstream node (optional)>+<model name>+<number of downstream node>
+        # build the current model + all its downstream
+        dbt build --select dim_customer+
+        # build the current model + all up/down-stream
+        dbt build --select +dim_customer+
+        #   buid 5 upstream model with current model + 5 downstream model
+        dbt build --select 5+dim_customer+5
+#### Review
+1. Testing
+    - Testing is used in software engineering to make sure that the code does what we expect it to.
+    - In Analytics Engineering, testing allows us to make sure that the SQL transformations we write produce a model that meets our assertions.
+    - In dbt, tests are written as select statements. These select statements are run against your materialized models to ensure they meet your assertions.
+
+2. Tests in dbt
+    - In dbt, there are two types of tests - generic tests and singular tests:
+        - Generic tests are a way to validate your data models and ensure data quality. These tests are predefined and can be applied to any column of your data models to check for common data issues. They are written in YAML files.
+        - Singular tests are data tests defined by writing specific SQL queries that return records which fail the test conditions. These tests are referred to as "singular" because they are one-off assertions that are uniquely designed for a single purpose or specific scenario within the data models.
+    - dbt ships with four built in tests: unique, not null, accepted values, relationships.
+        - Unique tests to see if every value in a column is unique
+        - Not_null tests to see if every value in a column is not null
+        - Accepted_values tests to make sure every value in a column is equal to a value in a provided list
+        - Relationships tests to ensure that every value in a column exists in a column in another model (see: referential integrity)
+    - Tests can be run against your current project using a range of commands:
+        - `dbt test runs all tests in the dbt project`
+        - `dbt test --select test_type:generic`
+        - `dbt test --select test_type:singular`
+        - `dbt test --select one_specific_model`
+    - In development, dbt Cloud will provide a visual for your test results. Each test produces a log that you can view to investigate the test results further.
+        ![alt text](../images/image_41.png)
+    - In production, dbt Cloud can be scheduled to run dbt test. The ‘Run History’ tab provides a similar interface for viewing the test results.
+        ![alt text](../images/image_42.png)
+    - To assign how many node will be built or tested, using the structure
+        ```
+        <number of upstream node>+<current node>+<number of downstream node>
+
+        -> it will get all of the assigned upstream + downstream + current to test and build, use it with the --select option
+        ```
+
+
+#### Knowledge check
+![alt text](../images/image_33.png)
+![alt text](../images/image_34.png)
+![alt text](../images/image_35.png)
+![alt text](../images/image_36.png)
+![alt text](../images/image_37.png)
+![alt text](../images/image_38.png)
+![alt text](../images/image_39.png)
+![alt text](../images/image_40.png)
