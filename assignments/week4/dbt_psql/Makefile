@@ -10,11 +10,14 @@ create_table:
 to_psql:
 	docker exec -ti de_psql psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-dbt-build:
+dbt_build:
 	dbt build --profiles-dir ./brazillian_ecom --project-dir brazillian_ecom
 
-dbt-run:	
+dbt_run:	
 	dbt run --profiles-dir ./brazillian_ecom --project-dir brazillian_ecom
 
-dbt-docs:
+dbt_docs:
 	dbt docs generate --profiles-dir ./brazillian_ecom --project-dir brazillian_ecom && dbt docs serve --profiles-dir ./brazillian_ecom --project-dir brazillian_ecom
+
+dbt_seed:
+	dbt seed --profiles-dir ./brazillian_ecom --project-dir brazillian_ecom --full-refresh
